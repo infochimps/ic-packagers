@@ -1,0 +1,56 @@
+# sudo apt-get install ruby1.9.1 ruby1.9.1-dev make openjdk-7-jdk pkg-config libtool autoconf automake
+# sudo gem install rake fpm
+# install zeromq deb (dpkg or apt)
+# TODO: zeromq is a build-time dependency, but runtime?  If not remove --depends below
+
+archive="nathanmarz-jzmq-master.tar.gz"
+archiveuri="https://github.com/nathanmarz/jzmq/tarball/master/#{archive}"
+
+# Make up a version number because dd3327d is illegal for a .deb
+version="1.0"
+
+dir="nathanmarz-jzmq-dd3327d"
+
+extractartifact="#{dir}/README"
+autogenartifact="#{dir}/aclocal.m4"
+configureartifact="#{dir}/Makefile"
+makeartifact="#{dir}/src/zmq.jar"
+instartifact="inst/usr/local/share/java/zmq.jar"
+deb="jzmq-#{version}-amd64.deb"
+
+task :default => [deb]
+
+file extractartifact do |t|
+  sh "wget #{archiveuri}; tar xf #{archive}"
+end
+
+file autogenartifact => [extractartifact] do |t|
+  sh "cd #{dir}; ./autogen.sh"
+end
+
+file configureartifact => [autogenartifact] do |t|
+  sh "cd #{dir}; JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64 ./configure"
+end
+
+file makeartifact => [configureartifact] do |t|
+  # Patch build failure, fix copied from cookbook
+  sh "sed -i -e 's/classdist_noinst.stamp/classnoinst.stamp/' #{dir}/src/Makefile"
+
+  sh "cd #{dir}; make"
+end
+
+directory "inst"
+file "inst" => [makeartifact]
+
+file instartifact => ["inst"] do |t|
+  sh "fullinst=$(pwd)/inst; cd #{dir}; make DESTDIR=$fullinst install"
+end
+
+task deb => [instartifact] do |t|
+  sh "cd inst; fpm -s dir -t deb --name jzmq --depends zeromq --version #{version} --package ../#{deb} --deb-user root --deb-group root ."
+end
+
+task :clean do |t|
+  sh "rm -rf nathanmarz-jzmq-master.tar.gz #{dir} inst *.deb"
+end
+

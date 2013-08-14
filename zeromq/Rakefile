@@ -1,0 +1,45 @@
+# sudo apt-get install ruby1.9.1 ruby1.9.1-dev make libtool autoconf automake uuid-dev g++
+# sudo gem install rake fpm
+
+version="2.1.7"
+dir="zeromq-#{version}"
+archive="#{dir}.tar.gz"
+archiveuri="http://download.zeromq.org/#{archive}"
+
+extractartifact="#{dir}/README"
+configureartifact="#{dir}/Makefile"
+makeartifact="#{dir}/src/libzmq.la"
+instartifact="inst/usr/local/lib/libzmq.la"
+
+deb="#{dir}-amd64.deb"
+
+task :default => [deb]
+
+file extractartifact do |t|
+  sh "wget #{archiveuri}; tar xf #{archive}"
+end
+
+file configureartifact => [extractartifact] do |t|
+  sh "cd #{dir}; ./configure"
+end
+
+file makeartifact => [configureartifact] do |t|
+  sh "cd #{dir}; make"
+end
+
+directory "inst"
+file "inst" => [makeartifact]
+
+file instartifact =>["inst"] do |t|
+  sh "fullinst=$(pwd); cd #{dir}; make DESTDIR=$fullinst/inst install"
+end
+
+file deb => [instartifact] do
+  sh "cd inst; fpm -s dir -t deb --name zeromq --version #{version} --package ../#{deb} --deb-user root --deb-group root ."
+end
+
+task :clean do |t|
+  sh "rm -rf #{dir} #{archive} #{deb} inst"
+end
+
+

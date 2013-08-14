@@ -1,0 +1,43 @@
+# sudo apt-get install ruby1.9.1 ruby1.9.1-dev make openjdk-7-jdk
+# sudo gem install rake fpm
+
+version="0.7.1-incubating"
+dir="kafka-#{version}"
+tarball="#{dir}-src.tgz"
+tarballuri="http://artifacts.chimpy.us.s3.amazonaws.com/tarballs/#{tarball}"
+
+extractartifact="#{dir}/NOTICE"
+updateartifact="#{dir}/project/boot/update.log"
+packageartifact="#{dir}/core/target/scala_2.8.0/kafka-0.7.1.jar"
+instdir="inst/usr/local/share/kafka"
+instartifact="#{instdir}/NOTICE"
+deb="#{dir}-all.deb"
+
+task :default => [deb]
+
+file extractartifact do |t|
+  sh "wget #{tarballuri}; tar xf #{tarball}"
+end
+
+file updateartifact => [extractartifact] do
+  sh "cd #{dir}; ./sbt update"
+end
+
+file packageartifact => [updateartifact] do
+  sh "cd #{dir}; ./sbt package"
+end
+
+directory instdir
+file instdir => [packageartifact]
+
+file instartifact => [instdir] do
+  sh "cd #{dir}; find -type f -not -name '*.class' -not -name '*.scala' -not -name '*.java' -exec cp --archive --parents '{}' ../#{instdir} ';'"
+end
+
+file deb => [instartifact] do
+  sh "cd inst; fpm -s dir -t deb --name kafka --version #{version} --architecture all --package ../#{deb} --deb-user root --deb-group root ."
+end
+
+task :clean do |t|
+  sh "rm -rf #{dir} #{tarball} inst #{deb}"
+end

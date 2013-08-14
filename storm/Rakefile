@@ -1,0 +1,42 @@
+# sudo apt-get install ruby1.9.1 ruby1.9.1-dev openjdk-7-jdk unzip leiningen zip
+# sudo gem install rake fpm
+# install jzmq (dpkg or apt) ... if dpkg, run ldconfig
+# TODO: should extract zip for deb, instead of find/cp
+
+version="0.8.1"
+archive="#{version}.zip"
+archiveuri="https://github.com/nathanmarz/storm/archive/#{archive}"
+dir="storm-#{version}"
+
+extractartifact="#{dir}/bin/storm"
+buildartifact="#{dir}/storm-#{version}.zip"
+
+instdir="inst/usr/local/share"
+instartifact="#{instdir}/#{dir}/storm-#{version}.jar"
+
+deb="storm-#{version}-all.deb"
+
+task :default => [deb]
+
+file extractartifact do |t|
+  sh "wget #{archiveuri}; unzip #{archive}"
+end
+
+file buildartifact => [extractartifact] do |t|
+  sh "cd #{dir}; chmod +x bin/build_release.sh; bin/build_release.sh"
+end
+
+directory instdir
+file instdir => [buildartifact]
+  
+file instartifact => [instdir] do |t|
+  sh "cd #{instdir}; unzip ../../../../#{buildartifact}; mv #{dir} storm"
+end
+
+file deb => [instartifact] do |t|
+  sh "cd inst; fpm -s dir -t deb --name storm --architecture all --depends jzmq --version #{version} --package ../#{deb} --deb-user root --deb-group root ."
+end
+
+task :clean do |t|
+  sh "rm -rf *.zip storm-#{version} #{deb} inst"
+end
