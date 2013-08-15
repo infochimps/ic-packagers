@@ -38,7 +38,7 @@ file forrestartifact => [fd_archive,fs_archive] do |t|
 end
 
 file distartifact => [extractartifact,forrestartifact] do |t|
-  sh "forresthome=$(pwd)/apache-forrest-0.9; cd #{dir}; ant -Dforrest.home=$forresthome package-release"
+  sh "forresthome=$(pwd)/apache-forrest-#{fversion}; cd #{dir}; ant -Dforrest.home=$forresthome package-release"
 end
 
 file deb => [distartifact] do |t|
@@ -46,6 +46,6 @@ file deb => [distartifact] do |t|
 end
 
 task :clean do |t|
-  sh "rm -rf *.tar.gz *.deb pig-0.10.1 apache-forrest-0.9"
+  sh "rm -rf *.tar.gz *.deb #{dir} apache-forrest-#{fversion}"
 end
 
