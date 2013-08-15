@@ -1,0 +1,51 @@
+# sudo apt-get install openjdk-7-jdk ant
+# sudo gem install rake fpm
+
+fversion="0.9"
+fs_archive="apache-forrest-#{fversion}-sources.tar.gz"
+fd_archive="apache-forrest-#{fversion}-dependencies.tar.gz"
+fs_archiveuri="http://www.poolsaboveground.com/apache/forrest/#{fs_archive}"
+fd_archiveuri="http://www.poolsaboveground.com/apache/forrest/#{fd_archive}"
+forrestartifact="apache-forrest-#{fversion}/bin/forrest"
+
+version="0.10.1"
+dir="pig-#{version}"
+archive="#{dir}.tar.gz"
+archiveuri="http://apache.osuosl.org/pig/#{dir}/#{archive}"
+
+extractartifact="#{dir}/README.txt"
+distdir="#{dir}/build/rpm/pig-#{version}-SNAPSHOT"
+distartifact="#{distdir}/bin/pig"
+
+deb="pig-#{version}-all.deb"
+
+task :default => [deb]
+
+file extractartifact do |t|
+  sh "wget #{archiveuri}; tar xf #{archive}"
+end
+
+file fs_archive do |t|
+  sh "wget #{fs_archiveuri}"
+end
+
+file fd_archive do |t|
+  sh "wget #{fd_archiveuri}"
+end
+
+file forrestartifact => [fd_archive,fs_archive] do |t|
+  sh "tar xf #{fs_archive}; tar xf #{fd_archive}"
+end
+
+file distartifact => [extractartifact,forrestartifact] do |t|
+  sh "forresthome=$(pwd)/apache-forrest-0.9; cd #{dir}; ant -Dforrest.home=$forresthome package-release"
+end
+
+file deb => [distartifact] do |t|
+  sh "cd #{distdir}; mkdir usr; mv share usr; fpm -s dir -t deb --name pig --architecture all --version #{version} --package ../../../../#{deb} --deb-user root --deb-group root ."
+end
+
+task :clean do |t|
+  sh "rm -rf *.tar.gz *.deb pig-0.10.1 apache-forrest-0.9"
+end
+
