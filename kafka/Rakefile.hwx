@@ -2,6 +2,7 @@
 # sudo gem install rake fpm unzip
 
 version="d7dd0280d0a63d1b4df45ffa93f61ead490cbe39"
+cmp_version="0.7.1.d7dd02"
 dir="kafka-#{version}"
 tarball="#{dir}-src.tgz"
 tarballuri="http://artifacts.chimpy.us.s3.amazonaws.com/tarballs/#{tarball}"
@@ -14,7 +15,7 @@ updateartifact="#{dir}/project/boot/update.log"
 packageartifact="#{dir}/core/target/scala_2.8.0/kafka-0.7.1.jar"
 instdir="inst/usr/local/share/kafka"
 instartifact="#{instdir}/NOTICE"
-deb="#{dir}-all.deb"
+deb="kafka-#{cmp_version}-all.deb"
 
 task :default => [deb]
 
@@ -38,7 +39,7 @@ file instartifact => [instdir] do
 end
 
 file deb => [instartifact] do
-  sh "cd inst; fpm -s dir -t deb --name kafka-ics-hwx2 --version #{version} --architecture all --package ../#{deb} --deb-user root --deb-group root ."
+  sh "cd inst; fpm -s dir -t deb --name kafka-ics-hwx2 --version #{cmp_version} --architecture all --package ../#{deb} --deb-user root --deb-group root ."
 end
 
 task :clean do |t|
