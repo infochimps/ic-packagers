@@ -1,12 +1,16 @@
-# sudo apt-get install ruby1.9.1 ruby1.9.1-dev openjdk-7-jdk unzip leiningen zip
+# sudo apt-get install ruby1.9.1 ruby1.9.1-dev openjdk-7-jdk unzip zip maven
+# get leiningen script from github (apt leiningen too old)
 # sudo gem install rake fpm
 # install jzmq (dpkg or apt) ... if dpkg, run ldconfig
 # TODO: should extract zip for deb, instead of find/cp
 
-version="0.8.1"
-archive="#{version}.zip"
-archiveuri="https://github.com/nathanmarz/storm/archive/#{archive}"
-dir="storm-#{version}"
+version="0.9.0-wip21-ics"
+
+# Gah, no one tagged the version, but master HEAD is 
+# mostly unchanged since the version bump
+archive="master.zip"
+archiveuri="https://github.com/infochimps-labs/storm/archive/#{archive}"
+dir="storm-master"
 
 extractartifact="#{dir}/bin/storm"
 buildartifact="#{dir}/storm-#{version}.zip"
@@ -19,18 +23,19 @@ deb="storm-#{version}-all.deb"
 task :default => [deb]
 
 file extractartifact do |t|
-  sh "wget #{archiveuri}; unzip #{archive}"
+  sh "git clone git@github.com:infochimps-labs/storm.git #{dir}"
+  sh "chmod +x #{dir}/bin/build_release.sh"
 end
 
 file buildartifact => [extractartifact] do |t|
-  sh "cd #{dir}; chmod +x bin/build_release.sh; bin/build_release.sh"
+  sh "cd #{dir}; bin/build_release.sh"
 end
 
 directory instdir
 file instdir => [buildartifact]
   
 file instartifact => [instdir] do |t|
-  sh "cd #{instdir}; unzip ../../../../#{buildartifact}; mv #{dir} storm"
+  sh "cd #{instdir}; unzip ../../../../#{buildartifact}; mv storm-#{version} storm"
 end
 
 file deb => [instartifact] do |t|
@@ -38,5 +43,5 @@ file deb => [instartifact] do |t|
 end
 
 task :clean do |t|
-  sh "rm -rf *.zip storm-#{version} #{deb} inst"
+  sh "rm -rf *.zip #{deb} inst #{dir}"
 end
