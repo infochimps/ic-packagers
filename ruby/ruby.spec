@@ -17,7 +17,7 @@ tar xf ../SOURCES/ruby-1.9.3-p545.tar.gz
 %build
 cd ruby-1.9.3-p545
 echo "Im in $PWD"
-./configure --prefix=/usr
+./configure --prefix=/usr --disable-install-doc --enable-shared
 make
 
 %install
