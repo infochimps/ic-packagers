@@ -18,7 +18,7 @@ tar xf %SOURCE0
 
 %build
 cd zabbix-%version
-./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --enable-agent --with-libcurl
+./configure --prefix=/usr --sysconfdir=/etc/zabbix --localstatedir=/var --enable-agent --with-libcurl
 make
 
 %install
