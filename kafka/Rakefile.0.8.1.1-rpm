@@ -1,0 +1,34 @@
+# sudo apt-get install ruby1.9.1 ruby1.9.1-dev make openjdk-7-jdk
+# sudo gem install rake fpm
+
+version="0.8.1.1"
+dir="kafka-#{version}-src"
+tarball="#{dir}.tgz"
+tarballuri="http://artifacts.chimpy.us.s3.amazonaws.com/tarballs/#{tarball}"
+
+extractartifact="#{dir}/NOTICE"
+instdir="inst/usr/local/share/kafka"
+instartifact="#{instdir}/NOTICE"
+rpm="kafka-#{version}.x86_64.rpm"
+
+task :default => [rpm]
+task :build => [rpm]
+
+file dir do |t|
+  sh "wget #{tarballuri} ; tar xf #{tarball} ; cd #{t} ; ./gradlew jar"
+end
+
+directory instdir
+file instdir => dir
+
+file instartifact => [instdir] do
+  sh "cd #{dir}; find -type f -not -name '*.class' -not -name '*.scala' -not -name '*.java' -exec cp --archive --parents '{}' ../#{instdir} ';'"
+end
+
+file rpm => [instartifact] do
+  sh "cd inst; fpm -s dir -t rpm --name kafka --version #{version} --architecture all --package ../#{rpm} --rpm-user root --rpm-group root ."
+end
+
+task :clean do |t|
+  sh "rm -vrf #{dir} #{tarball} inst #{rpm}"
+end
